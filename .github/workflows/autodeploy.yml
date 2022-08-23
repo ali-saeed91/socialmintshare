@@ -1,36 +1,63 @@
-# This is a basic workflow to help you get started with Actions
-
-name: CI
-
-# Controls when the workflow will run
+name: first-github-action
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+    branches:
+      # When someone push to `main` branch
+      - main
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  
+  # test:
+  #   ...
+  deploy:
+    name: "Deploy to Production"
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # needs: test
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Configure SSH
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/staging.key
+          chmod 600 ~/.ssh/staging.key
+          cat >>~/.ssh/config <<END
+          Host staging
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/staging.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+      
+      
+      - name: Remove old Directory
+        run: ssh staging 'cd /home/syslify/ && sudo rm -rf Social-Media-API || true'
+
+      - name: Checkout the repo on the Production Server
+        run: ssh staging "cd /home/syslify/ && git clone https://github.com/SocialMint/Social-Media-API.git || true"
+           
+      - name: Install the Application
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && yes|sudo composer install'
+
+      - name: Setting up Ownership
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo chown -R www-data.www-data /home/syslify/Social-Media-API/'
+
+      - name: Setting up Execution rights 1
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo chmod -R 755 /home/syslify/Social-Media-API/' 
+
+      - name: Setting Execution rights 2
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo chmod -R 777 /home/syslify/Social-Media-API/storage'
+
+      - name: Setting up env
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo cp .env.deploy .env'
+
+      - name: Generating artisan key
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo php artisan key:generate'
+
+      - name: Syncing updates to Production
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo rsync -av /home/syslify/Social-Media-API/public /var/www/socialmintshare.net/Social-Mint-Api/public'
+
+      - name: Restart Apache to update Production
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo systemctl restart apache2'
