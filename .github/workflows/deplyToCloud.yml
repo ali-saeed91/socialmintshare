@@ -41,20 +41,8 @@ jobs:
       - name: Install the Application
         run: ssh staging 'cd /home/syslify/Social-Media-API/ && yes|sudo composer install'
 
-      - name: Setting up Ownership
-        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo chown -R www-data.www-data /home/syslify/Social-Media-API/'
-
-      - name: Setting up Execution rights 1
-        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo chmod -R 755 /home/syslify/Social-Media-API/' 
-
-      - name: Setting Execution rights 2
-        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo chmod -R 777 /home/syslify/Social-Media-API/storage'
-
-      - name: Setting up env
-        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo cp .env.deploy .env'
-
-      - name: Generating artisan key
-        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo php artisan key:generate'
+      - name: Syncing updates to Production
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo rsync -av /home/syslify/Social-Media-API/resources/  /var/www/socialmintshare.net/Social-Mint-Api/resources/'
 
       - name: Syncing updates to Production
         run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo rsync -av /home/syslify/Social-Media-API/public /var/www/socialmintshare.net/Social-Mint-Api/public'
