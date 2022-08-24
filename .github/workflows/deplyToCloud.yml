@@ -42,10 +42,10 @@ jobs:
         run: ssh staging 'cd /home/syslify/Social-Media-API/ && yes|sudo composer install'
 
       - name: Syncing updates to Production
-        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo rsync -av /home/syslify/Social-Media-API/resources/  /var/www/socialmintshare.net/Social-Mint-Api/resources/'
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo rsync -av /home/syslify/Social-Media-API/resources/  /var/www/socialmintshare.net/Social-Media-API/resources/'
 
       - name: Syncing updates to Production
-        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo rsync -av /home/syslify/Social-Media-API/public /var/www/socialmintshare.net/Social-Mint-Api/public'
+        run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo rsync -av /home/syslify/Social-Media-API/public /var/www/socialmintshare.net/Social-Media-API/public'
 
       - name: Restart Apache to update Production
         run: ssh staging 'cd /home/syslify/Social-Media-API/ && sudo systemctl restart apache2'
